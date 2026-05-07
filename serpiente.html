@@ -9,26 +9,34 @@
         :root { --bg: #1a1a2e; --card: #16213e; --accent: #4ecca3; --danger: #e94560; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; overflow-x: hidden; }
         
-        /* PANTALLA DE INICIO */
-        #startScreen {
+        /* PANTALLAS (INICIO Y GAME OVER) */
+        #startScreen, #gameOverScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(26, 26, 46, 0.95); z-index: 100;
+            background: rgba(26, 26, 46, 0.98); z-index: 100;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
+        #gameOverScreen { display: none; } /* Oculto al empezar */
+
         .config-box { background: var(--card); padding: 30px; border-radius: 20px; border: 2px solid var(--accent); text-align: center; width: 85%; max-width: 350px; }
         .speed-options { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
-        .btn-speed { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #0f3460; color: white; transition: 0.3s; }
+        
+        .btn-speed, .btn-restart { 
+            padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; 
+            background: #0f3460; color: white; transition: 0.3s; width: 100%;
+        }
         .btn-speed:hover { background: var(--accent); color: var(--bg); }
         .btn-speed.active { background: var(--accent); color: var(--bg); box-shadow: 0 0 15px var(--accent); }
+        
+        .btn-main { background: var(--accent) !important; color: var(--bg) !important; font-size: 1.2rem; margin-top: 10px; }
 
         /* JUEGO */
         .header { width: 100%; max-width: 400px; display: flex; justify-content: space-between; padding: 15px; box-sizing: border-box; }
         canvas { background: #0f3460; border: 4px solid var(--card); border-radius: 15px; max-width: 95vw; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
         .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
-        .btn-dir { width: 65px; height: 65px; background: var(--card); border: 2px solid var(--accent); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .btn-dir { width: 65px; height: 65px; background: var(--card); border: 2px solid var(--accent); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; touch-action: manipulation; }
 
-        .ranking { margin-top: 15px; background: var(--card); padding: 15px; border-radius: 15px; width: 90%; max-width: 350px; }
+        .ranking { margin-top: 15px; background: var(--card); padding: 15px; border-radius: 15px; width: 90%; max-width: 350px; margin-bottom: 20px; }
         .rank-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #1f2d50; }
         .btn-exit { margin: 20px; padding: 12px 25px; background: var(--danger); color: white; text-decoration: none; border-radius: 10px; font-weight: bold; }
     </style>
@@ -45,7 +53,17 @@
                 <button class="btn-speed active" onclick="selectSpeed(100, this)">MEDIO 🐍</button>
                 <button class="btn-speed" onclick="selectSpeed(50, this)">RÁPIDO ⚡</button>
             </div>
-            <button class="btn-speed" style="background: var(--accent); color: var(--bg); width: 100%; font-size: 1.2rem;" onclick="startGame()">¡INICIAR!</button>
+            <button class="btn-speed btn-main" onclick="startGame()">¡INICIAR!</button>
+        </div>
+    </div>
+
+    <div id="gameOverScreen">
+        <div class="config-box" style="border-color: var(--danger);">
+            <i class="fas fa-skull-crossbones" style="font-size: 3rem; color: var(--danger); margin-bottom: 15px;"></i>
+            <h2 style="color: var(--danger);">¡HAS PERDIDO!</h2>
+            <p id="finalScoreText" style="font-size: 1.2rem; margin: 10px 0;">Puntuación: 0</p>
+            <button class="btn-restart btn-main" onclick="resetGame()">REINTENTAR</button>
+            <a href="index.html" class="btn-restart" style="display: block; text-decoration: none; margin-top: 10px; line-height: 20px;">SALIR</a>
         </div>
     </div>
 
@@ -79,10 +97,19 @@
 
         let score = 0;
         let d = "RIGHT";
-        let snake = [{x: 10 * box, y: 10 * box}, {x: 9 * box, y: 10 * box}];
-        let food = { x: Math.floor(Math.random()*19)*box, y: Math.floor(Math.random()*19)*box };
+        let snake = [];
+        let food = {};
         let gameSpeed = 100;
         let gameLoop;
+
+        // Inicializar posiciones
+        function resetVariables() {
+            score = 0;
+            d = "RIGHT";
+            snake = [{x: 10 * box, y: 10 * box}, {x: 9 * box, y: 10 * box}];
+            food = { x: Math.floor(Math.random()*19)*box, y: Math.floor(Math.random()*19)*box };
+            document.getElementById("score").innerText = "0";
+        }
 
         function selectSpeed(ms, btn) {
             gameSpeed = ms;
@@ -91,8 +118,16 @@
         }
 
         function startGame() {
+            resetVariables();
             document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            if(gameLoop) clearInterval(gameLoop);
             gameLoop = setInterval(draw, gameSpeed);
+        }
+
+        function resetGame() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            startGame();
         }
 
         document.addEventListener("keydown", (e) => {
@@ -110,11 +145,11 @@
         }
 
         function drawApple(x, y) {
-            ctx.fillStyle = "#e94560"; // Manzana
+            ctx.fillStyle = "#e94560";
             ctx.beginPath();
             ctx.arc(x + box/2, y + box/2, box/2 - 2, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = "#4ecca3"; // Rabito
+            ctx.fillStyle = "#4ecca3";
             ctx.fillRect(x + box/2 - 1, y + 2, 2, 5);
         }
 
@@ -123,14 +158,19 @@
                 const isHead = index === 0;
                 ctx.fillStyle = isHead ? "#4ecca3" : "white";
                 ctx.beginPath();
-                ctx.roundRect(part.x, part.y, box-1, box-1, 5);
+                // Usamos fillRect simple si roundRect falla en navegadores antiguos
+                if (ctx.roundRect) {
+                    ctx.roundRect(part.x, part.y, box-1, box-1, 5);
+                } else {
+                    ctx.rect(part.x, part.y, box-1, box-1);
+                }
                 ctx.fill();
 
                 if (isHead) {
                     ctx.fillStyle = "black";
                     ctx.fillRect(part.x + 12, part.y + 4, 3, 3);
                     ctx.fillRect(part.x + 12, part.y + 12, 3, 3);
-                    // Lengua roja
+                    
                     ctx.strokeStyle = "red";
                     ctx.lineWidth = 2;
                     ctx.beginPath();
@@ -169,8 +209,8 @@
             if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
                 clearInterval(gameLoop);
                 saveScore(score);
-                alert("¡GAME OVER! Puntos: " + score);
-                location.reload();
+                showGameOver();
+                return;
             }
             snake.unshift(newHead);
         }
@@ -180,6 +220,12 @@
                 if(head.x == array[i].x && head.y == array[i].y) return true;
             }
             return false;
+        }
+
+        function showGameOver() {
+            document.getElementById('finalScoreText').innerText = "Puntuación: " + score;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+            displayRanking();
         }
 
         function saveScore(s) {
@@ -198,6 +244,7 @@
                 </div>
             `).join('');
         }
+        
         displayRanking();
     </script>
 </body>
