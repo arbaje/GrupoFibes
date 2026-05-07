@@ -2,57 +2,66 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buscaminas Pro - Alba & Juan</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #1a1a2e; --card: #16213e; --accent: #4ecca3; --danger: #e94560; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
-        
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif;
+            display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px;
+            min-height: 100vh; overflow-x: hidden;
+        }
+        h2 { margin: 10px 0 8px; text-align: center; }
+        #game-wrapper {
+            width: min(100vw - 20px, 720px);
+            display: flex; flex-direction: column; align-items: center;
+        }
         #status-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(26, 26, 46, 0.95); z-index: 1000;
-            flex-direction: column; justify-content: center; align-items: center; text-align: center;
+            display: none; position: fixed; inset: 0; background: rgba(26, 26, 46, 0.95); z-index: 1000;
+            flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;
         }
-        .modal-box { background: var(--card); padding: 30px; border-radius: 20px; border: 3px solid var(--accent); width: 80%; max-width: 300px; }
-        
-        /* Controles de Nivel */
-        .difficulty-selector { margin-bottom: 10px; display: flex; gap: 5px; }
-        .btn-diff { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; background: #333; color: white; font-size: 0.8rem; }
+        .modal-box { background: var(--card); padding: 30px; border-radius: 20px; border: 3px solid var(--accent); width: min(80vw, 300px); }
+        .difficulty-selector { margin-bottom: 10px; display: flex; gap: 5px; width: 100%; }
+        .btn-diff { flex: 1; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; background: #333; color: white; font-size: 0.8rem; }
         .diff-active { background: #f39c12 !important; }
-
-        #grid { 
-            display: grid; 
-            gap: 2px; 
-            background: #0f3460; 
-            padding: 5px; 
-            border-radius: 8px; 
+        .mode-selector { margin: 12px 0 15px; display: flex; gap: 10px; width: 100%; }
+        .btn-mode { flex: 1; padding: 14px; border-radius: 10px; border: none; font-weight: bold; background: #555; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .active-mode { background: var(--accent); color: var(--bg); border: 2px solid white; }
+        #grid {
+            display: grid; gap: 2px; background: #0f3460; padding: 5px; border-radius: 8px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: calc(100vw - 20px);
+            overflow: hidden;
+            touch-action: manipulation;
         }
-
-        .cell { 
-            width: 35px; height: 35px; 
-            background: #2a2a40; 
-            border-radius: 3px; 
-            display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; font-size: 1rem; cursor: pointer;
-            user-select: none;
+        .cell {
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            min-width: 0;
+            background: #2a2a40; border-radius: 3px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: clamp(0.7rem, 2.2vw, 1rem);
+            cursor: pointer; user-select: none; line-height: 1;
         }
-
         .revealed { background: #e0e0e0; color: #1a1a2e; }
         .mine { background: var(--danger) !important; color: white !important; }
-        
-        /* Colores para los números */
         .n-1 { color: blue; } .n-2 { color: green; } .n-3 { color: red; } .n-4 { color: darkblue; }
-
-        .mode-selector { margin: 15px; display: flex; gap: 10px; width: 100%; max-width: 350px; }
-        .btn-mode { flex: 1; padding: 15px; border-radius: 10px; border: none; font-weight: bold; background: #555; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .active-mode { background: var(--accent); color: var(--bg); border: 2px solid white; }
         .btn-menu { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+        @media (max-width: 480px) {
+            body { padding: 6px; }
+            h2 { font-size: 1.2rem; }
+            .difficulty-selector, .mode-selector { gap: 6px; }
+            .btn-diff { padding: 7px 6px; font-size: 0.72rem; }
+            .btn-mode { padding: 11px 8px; font-size: 0.9rem; }
+            #grid { gap: 1px; padding: 4px; }
+            .cell { border-radius: 2px; }
+        }
     </style>
 </head>
 <body>
-
     <div id="status-overlay">
         <div class="modal-box" id="modal-box">
             <i id="status-icon" class="fas fa-skull" style="font-size: 3rem; margin-bottom: 15px;"></i>
@@ -62,20 +71,19 @@
         </div>
     </div>
 
-    <h2>💣 BUSCAMINAS</h2>
-
-    <div class="difficulty-selector">
-        <button class="btn-diff diff-active" onclick="changeDiff(8, 8, 10, this)">BAJO</button>
-        <button class="btn-diff" onclick="changeDiff(12, 12, 25, this)">MEDIO</button>
-        <button class="btn-diff" onclick="changeDiff(15, 15, 45, this)">ALTO</button>
+    <div id="game-wrapper">
+        <h2>💣 BUSCAMINAS</h2>
+        <div class="difficulty-selector">
+            <button class="btn-diff diff-active" onclick="changeDiff(8, 8, 10, this)">BAJO</button>
+            <button class="btn-diff" onclick="changeDiff(12, 12, 25, this)">MEDIO</button>
+            <button class="btn-diff" onclick="changeDiff(15, 15, 45, this)">ALTO</button>
+        </div>
+        <div class="mode-selector">
+            <button id="btnPicar" class="btn-mode active-mode" onclick="setMode('picar')"><i class="fas fa-hammer"></i> PICAR</button>
+            <button id="btnBandera" class="btn-mode" onclick="setMode('bandera')"><i class="fas fa-flag"></i> BANDERA</button>
+        </div>
+        <div id="grid"></div>
     </div>
-
-    <div class="mode-selector">
-        <button id="btnPicar" class="btn-mode active-mode" onclick="setMode('picar')"><i class="fas fa-hammer"></i> PICAR</button>
-        <button id="btnBandera" class="btn-mode" onclick="setMode('bandera')"><i class="fas fa-flag"></i> BANDERA</button>
-    </div>
-
-    <div id="grid"></div>
 
     <script>
         let mode = 'picar';
@@ -98,28 +106,34 @@
             initGame();
         }
 
+        function fitGrid() {
+            const grid = document.getElementById('grid');
+            const availableWidth = Math.min(window.innerWidth - 20, 720);
+            const gap = 2;
+            const pad = 10;
+            const cellSize = Math.floor((availableWidth - pad - ((config.cols - 1) * gap)) / config.cols);
+            grid.style.gridTemplateColumns = `repeat(${config.cols}, ${cellSize}px)`;
+            grid.style.width = `${config.cols * cellSize + (config.cols - 1) * gap + pad}px`;
+            grid.style.maxWidth = 'calc(100vw - 20px)';
+        }
+
         function initGame() {
             gameOver = false;
             revealedCount = 0;
             document.getElementById('status-overlay').style.display = 'none';
             const gridElement = document.getElementById('grid');
-            gridElement.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
             gridElement.innerHTML = '';
-            board = Array(config.rows).fill().map(() => Array(config.cols).fill(0));
+            fitGrid();
+            board = Array.from({ length: config.rows }, () => Array(config.cols).fill(0));
             cells = [];
 
-            // 1. Colocar minas
             let placedMines = 0;
             while(placedMines < config.mines) {
                 let r = Math.floor(Math.random() * config.rows);
                 let c = Math.floor(Math.random() * config.cols);
-                if(board[r][c] !== 'M') {
-                    board[r][c] = 'M';
-                    placedMines++;
-                }
+                if(board[r][c] !== 'M') { board[r][c] = 'M'; placedMines++; }
             }
 
-            // 2. Calcular números
             for(let r=0; r<config.rows; r++) {
                 for(let c=0; c<config.cols; c++) {
                     if(board[r][c] === 'M') continue;
@@ -133,7 +147,6 @@
                 }
             }
 
-            // 3. Crear celdas visuales
             for(let r=0; r<config.rows; r++) {
                 cells[r] = [];
                 for(let c=0; c<config.cols; c++) {
@@ -149,42 +162,27 @@
         function handleCellClick(r, c) {
             if(gameOver) return;
             const cell = cells[r][c];
-
             if(mode === 'bandera') {
                 if(cell.classList.contains('revealed')) return;
                 cell.innerText = cell.innerText === '🚩' ? '' : '🚩';
                 return;
             }
-
             if(cell.innerText === '🚩' || cell.classList.contains('revealed')) return;
-
-            if(board[r][c] === 'M') {
-                revealAllMines();
-                showEnd(false);
-            } else {
-                revealCell(r, c);
-                checkWin();
-            }
+            if(board[r][c] === 'M') { revealAllMines(); showEnd(false); }
+            else { revealCell(r, c); checkWin(); }
         }
 
         function revealCell(r, c) {
             if(r<0 || r>=config.rows || c<0 || c>=config.cols) return;
             if(cells[r][c].classList.contains('revealed')) return;
-
             const val = board[r][c];
             cells[r][c].classList.add('revealed');
             revealedCount++;
-
             if(val > 0) {
                 cells[r][c].innerText = val;
                 cells[r][c].classList.add('n-' + val);
             } else {
-                // Si es cero, revelación en cascada (lo típico del buscaminas)
-                for(let i=-1; i<=1; i++) {
-                    for(let j=-1; j<=1; j++) {
-                        revealCell(r+i, c+j);
-                    }
-                }
+                for(let i=-1; i<=1; i++) for(let j=-1; j<=1; j++) revealCell(r+i, c+j);
             }
         }
 
@@ -201,9 +199,7 @@
         }
 
         function checkWin() {
-            if(revealedCount === (config.rows * config.cols) - config.mines) {
-                showEnd(true);
-            }
+            if(revealedCount === (config.rows * config.cols) - config.mines) showEnd(true);
         }
 
         function showEnd(win) {
@@ -212,18 +208,11 @@
             const title = document.getElementById('status-title');
             const icon = document.getElementById('status-icon');
             overlay.style.display = 'flex';
-            
-            if(win) {
-                title.innerText = "¡LIMPIEZA TOTAL!";
-                icon.className = "fas fa-trophy";
-                icon.style.color = "var(--accent)";
-            } else {
-                title.innerText = "BOOOOM!";
-                icon.className = "fas fa-bomb";
-                icon.style.color = "var(--danger)";
-            }
+            if(win) { title.innerText = '¡LIMPIEZA TOTAL!'; icon.className = 'fas fa-trophy'; icon.style.color = 'var(--accent)'; }
+            else { title.innerText = 'BOOOOM!'; icon.className = 'fas fa-bomb'; icon.style.color = 'var(--danger)'; }
         }
 
+        window.addEventListener('resize', () => { fitGrid(); });
         initGame();
     </script>
 </body>
