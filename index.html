@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GameZone - Alba & Juan</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #1a1a2e; --card: #16213e; --accent: #4ecca3; --danger: #e94560; --text: #ffffff;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card);
+            padding: 20px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h1, h2 { color: var(--accent); margin-bottom: 20px; }
+
+        /* Estilos de botones de juego */
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-game {
+            background: #0f3460;
+            border: 2px solid transparent;
+            border-radius: 15px;
+            color: white;
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .btn-game i { font-size: 2rem; color: var(--accent); }
+        .btn-game:active { transform: scale(0.95); background: #1f4068; }
+
+        .full-width { grid-column: span 2; }
+
+        /* Estilos de Login */
+        input {
+            width: 100%; padding: 15px; margin-bottom: 10px;
+            border-radius: 10px; border: none; background: #0f3460; color: white;
+        }
+
+        .btn-main {
+            width: 100%; padding: 15px; border-radius: 10px; border: none;
+            font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+
+        .btn-primary { background: var(--accent); color: var(--bg); }
+        .btn-secondary { background: transparent; border: 2px solid var(--danger); color: var(--danger); }
+
+        #menuScreen { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="authScreen" class="container">
+        <h1>🎮 GameZone</h1>
+        <input type="text" id="userInput" placeholder="Usuario">
+        <input type="password" id="passInput" placeholder="Contraseña">
+        <button class="btn-main btn-primary" onclick="app.login()">Entrar</button>
+        <button class="btn-main btn-secondary" onclick="app.register()">Registrar</button>
+    </div>
+
+    <div id="menuScreen" class="container">
+        <h2 id="welcomeText">¡Hola!</h2>
+        <div class="game-grid">
+            <button class="btn-game" onclick="app.loadGame('Serpiente')">
+                <i class="fas fa-staff-snake"></i>SERPIENTE
+            </button>
+            <button class="btn-game" onclick="app.loadGame('Palabra')">
+                <i class="fas fa-font"></i>PALABRA DÍA
+            </button>
+            <button class="btn-game" onclick="app.loadGame('Sopa')">
+                <i class="fas fa-search"></i>SOPA LETRAS
+            </button>
+            <button class="btn-game" onclick="app.loadGame('Sudoku')">
+                <i class="fas fa-table-cells"></i>SUDOKU
+            </button>
+            <button class="btn-game full-width" onclick="app.loadGame('Buscamina')">
+                <i class="fas fa-bomb"></i>BUSCAMINA
+            </button>
+        </div>
+        <button class="btn-main btn-secondary" onclick="app.logout()">Cerrar Sesión</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Busca-Bombas Pro - Niveles</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg: #1a1a2e; --card: #16213e; --accent: #4ecca3; --danger: #e94560; --mine: #f39c12; }
+        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .main-wrapper { display: flex; gap: 20px; background: var(--card); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        #mines-grid { 
+            display: grid; 
+            gap: 2px; 
+            background: #0f3460; 
+            padding: 5px; 
+            border-radius: 5px;
+            user-select: none;
+        }
+        .cell {
+            width: 30px; height: 30px; background: var(--bg);
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 0.9rem; cursor: pointer;
+            border-radius: 2px;
+        }
+        .cell.hidden { background: #232345; color: transparent; }
+        .cell.hidden:hover { background: #2d2d5a; }
+        .cell.revealed { background: #16213e; color: #4ecca3; cursor: default; }
+        .cell.mine { background: var(--danger) !important; color: white !important; }
+        .cell.flag { background: var(--mine) !important; }
+
+        /* Colores para los números */
+        .n1 { color: #3498db; } .n2 { color: #2ecc71; } .n3 { color: #e74c3c; } .n4 { color: #9b59b6; }
+
+        .sidebar { width: 220px; display: flex; flex-direction: column; }
+        .info-box { background: #0f3460; padding: 15px; border-radius: 10px; margin-bottom: 10px; text-align: center; }
+        .ranking-box { background: #0f3460; padding: 10px; border-radius: 10px; flex-grow: 1; font-size: 0.9rem; }
+        .ranking-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #16213e; }
+        
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; text-decoration: none; display: block; text-align: center; }
+        .btn-next { background: var(--accent); color: var(--bg); }
+        .btn-exit { background: var(--danger); color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <div>
+            <h2 id="levelTitle" style="margin:0 0 10px 0; color: var(--accent); text-align:center;">BUSCAMINA NIVEL 1</h2>
+            <div id="mines-grid"></div>
+        </div>
+
+        <div class="sidebar">
+            <div class="info-box">
+                <div id="mineCount" style="font-size: 1.2rem; font-weight: bold; color: var(--mine);">💣 0</div>
+                <div id="progresoText" style="font-size: 0.8rem; color: #4ecca3; margin-top:5px;"></div>
+                <p style="font-size: 0.7rem; color: #888; margin-top:5px;">Click derecho para poner bandera</p>
+            </div>
+
+            <div class="ranking-box">
+                <h3 style="text-align:center; margin:0 0 5px 0;">TOP 5 RANKING</h3>
+                <div id="rankingList"></div>
+            </div>
+
+            <button id="nextBtn" class="btn btn-next" style="display:none;" onclick="siguienteNivel()">¡NIVEL COMPLETADO!</button>
+            <a href="index.html" class="btn btn-exit">VOLVER AL MENÚ</a>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = localStorage.getItem('currentUser') || 'Invitado';
+        let userProgress = JSON.parse(localStorage.getItem('mines_progreso_usuarios')) || {};
+        let nivelActual = userProgress[currentUser] || 1;
+        
+        let rows, cols, mines, boardData, gameOver;
+
+        function initGame() {
+            gameOver = false;
+            document.getElementById("nextBtn").style.display = "none";
+            document.getElementById("levelTitle").innerText = `BUSCAMINA NIVEL ${nivelActual}`;
+            document.getElementById("progresoText").innerText = `Jugador: ${currentUser}`;
+
+            // Configuración según nivel
+            rows = 8 + Math.floor(nivelActual / 3);
+            cols = rows;
+            mines = Math.floor((rows * cols) * 0.15) + (nivelActual); 
+            document.getElementById("mineCount").innerText = `💣 ${mines}`;
+
+            const grid = document.getElementById("mines-grid");
+            grid.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+            grid.innerHTML = "";
+
+            // Crear matriz de datos
+            boardData = Array(rows).fill().map(() => Array(cols).fill(0));
+            
+            // Colocar minas
+            let placedMines = 0;
+            while(placedMines < mines) {
+                let r = Math.floor(Math.random() * rows);
+                let c = Math.floor(Math.random() * cols);
+                if(boardData[r][c] !== 'M') {
+                    boardData[r][c] = 'M';
+                    placedMines++;
+                }
+            }
+
+            // Calcular números
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    if(boardData[r][c] === 'M') continue;
+                    let count = 0;
+                    for(let i=-1; i<=1; i++) {
+                        for(let j=-1; j<=1; j++) {
+                            if(r+i>=0 && r+i<rows && c+j>=0 && c+j<cols && boardData[r+i][c+j] === 'M') count++;
+                        }
+                    }
+                    boardData[r][c] = count;
+                }
+            }
+
+            // Dibujar tablero
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell hidden";
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    
+                    cell.onclick = () => revealCell(r, c);
+                    cell.oncontextmenu = (e) => {
+                        e.preventDefault();
+                        if(!cell.classList.contains('revealed')) cell.classList.toggle('flag');
+                    };
+                    
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function revealCell(r, c) {
+            if(gameOver) return;
+            const cell = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+            if(!cell || cell.classList.contains('revealed') || cell.classList.contains('flag')) return;
+
+            cell.classList.remove('hidden');
+            cell.classList.add('revealed');
+
+            if(boardData[r][c] === 'M') {
+                cell.classList.add('mine');
+                cell.innerText = "💣";
+                gameOver = true;
+                setTimeout(() => { alert("💥 ¡BOOM! Has pisado una mina. Reintentando nivel..."); initGame(); }, 500);
+                return;
+            }
+
+            if(boardData[r][c] > 0) {
+                cell.innerText = boardData[r][c];
+                cell.classList.add('n' + boardData[r][c]);
+            } else {
+                // Expandir si es 0
+                for(let i=-1; i<=1; i++) {
+                    for(let j=-1; j<=1; j++) {
+                        if(r+i>=0 && r+i<rows && c+j>=0 && c+j<cols) revealCell(r+i, c+j);
+                    }
+                }
+            }
+            checkWin();
+        }
+
+        function checkWin() {
+            const hiddenNonMines = document.querySelectorAll('.cell.hidden:not(.mine-cell)');
+            let win = true;
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    const cell = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+                    if(boardData[r][c] !== 'M' && cell.classList.contains('hidden')) win = false;
+                }
+            }
+            if(win) {
+                saveScore(150 * nivelActual);
+                document.getElementById("nextBtn").style.display = "block";
+                gameOver = true;
+            }
+        }
+
+        function siguienteNivel() {
+            nivelActual++;
+            userProgress[currentUser] = nivelActual;
+            localStorage.setItem('mines_progreso_usuarios', JSON.stringify(userProgress));
+            initGame();
+        }
+
+        function saveScore(p) {
+            let ranking = JSON.parse(localStorage.getItem('mines_ranking_global')) || [];
+            const idx = ranking.findIndex(r => r.name.toLowerCase() === currentUser.toLowerCase());
+            if (idx !== -1) ranking[idx].points += p;
+            else ranking.push({ name: currentUser, points: p });
+            ranking.sort((a, b) => b.points - a.points);
+            localStorage.setItem('mines_ranking_global', JSON.stringify(ranking.slice(0, 5)));
+            displayRanking();
+        }
+
+        function displayRanking() {
+            let rk = JSON.parse(localStorage.getItem('mines_ranking_global')) || [];
+            document.getElementById("rankingList").innerHTML = rk.map((r, i) => `
+                <div class="ranking-item" style="${r.name === currentUser ? 'color:#4ecca3; font-weight:bold' : ''}">
+                    <span>${i + 1}. ${r.name}</span><span>${r.points}</span>
+                </div>`).join('');
+        }
+
+        initGame();
+        displayRanking();
+    </script>
+</body>
+</html>

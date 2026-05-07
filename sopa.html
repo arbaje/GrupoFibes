@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sopa de Letras - 100 Niveles</title>
+    <style>
+        :root { --bg: #1a1a2e; --card: #16213e; --accent: #4ecca3; --danger: #e94560; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .main-wrapper { display: flex; gap: 20px; background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        #board { display: grid; gap: 3px; background: #0f3460; padding: 10px; border-radius: 8px; user-select: none; }
+        .letter { 
+            width: 30px; height: 30px; background: var(--bg); 
+            display: flex; justify-content: center; align-items: center; 
+            cursor: pointer; border-radius: 3px; font-weight: bold; font-size: 0.85rem;
+        }
+        .letter.selected { background: #f39c12; }
+        .letter.found { background: var(--accent) !important; color: var(--bg); }
+
+        .sidebar { width: 240px; display: flex; flex-direction: column; }
+        .info-box { background: #0f3460; padding: 15px; border-radius: 10px; margin-bottom: 10px; text-align: center; }
+        .word-list { text-align: left; margin-top: 10px; font-size: 0.8rem; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .word-item { color: #888; text-decoration: line-through; }
+        .word-item.active { color: white; text-decoration: none; font-weight: bold; }
+        
+        .ranking-box { background: #0f3460; padding: 10px; border-radius: 10px; flex-grow: 1; max-height: 150px; overflow-y: auto; }
+        .ranking-item { display: flex; justify-content: space-between; padding: 4px; border-bottom: 1px solid #16213e; font-size: 0.8rem; }
+        
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 8px; }
+        .btn-next { background: var(--accent); color: var(--bg); }
+        .btn-exit { background: var(--danger); color: white; text-decoration: none; display: block; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <div>
+            <h2 id="levelTitle" style="margin:0 0 10px 0; color: var(--accent); text-align: center;">NIVEL 1</h2>
+            <div id="board"></div>
+        </div>
+
+        <div class="sidebar">
+            <div class="info-box">
+                <div id="progresoText" style="font-size: 0.9rem; font-weight: bold; margin-bottom: 5px;"></div>
+                <div style="font-size: 0.75rem; color: var(--accent);">BUSCA ESTAS PALABRAS:</div>
+                <div id="wordsToFind" class="word-list"></div>
+            </div>
+
+            <div class="ranking-box">
+                <h3 style="text-align:center; margin:0 0 5px 0; font-size: 0.9rem;">TOP 5 PUNTOS</h3>
+                <div id="rankingList"></div>
+            </div>
+
+            <button id="nextBtn" class="btn btn-next" style="display:none;" onclick="nextLevel()">SIGUIENTE NIVEL</button>
+            <a href="index.html" class="btn btn-exit">VOLVER AL MENÚ</a>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = localStorage.getItem('currentUser') || 'Invitado';
+        
+        // Diccionario gigante para niveles infinitos
+        const diccionario = ["CASA", "PERRO", "GATO", "SOL", "LUNA", "MAR", "NUBE", "ARBOL", "FLOR", "QUESO", "PIZZA", "COCHE", "AVION", "LIBRO", "MESA", "SILLA", "RADIO", "TELE", "AGUA", "FUEGO", "TIERRA", "VIENTO", "MONTAÑA", "RIO", "PLAYA", "CIUDAD", "PUEBLO", "FRUTA", "MANZANA", "PLATANO", "MADRID", "ESPAÑA", "JUEGO", "VALOR", "CORAJE", "SUERTE", "MUSICA", "PIANO", "GUITARRA", "DIBUJO", "COLOR", "VERDE", "AZUL", "ROJO", "BLANCO", "NEGRO", "AMIGO", "FAMILIA", "NIÑO", "PADRE", "MADRE"];
+
+        // Cargar el nivel guardado de este usuario específicamente
+        let userProgress = JSON.parse(localStorage.getItem('sopa_progreso_usuarios')) || {};
+        let currentLevel = userProgress[currentUser] || 1;
+
+        let wordsInLevel = [];
+        let foundWords = [];
+
+        function initLevel() {
+            const board = document.getElementById("board");
+            const wordContainer = document.getElementById("wordsToFind");
+            const title = document.getElementById("levelTitle");
+            const progreso = document.getElementById("progresoText");
+            
+            // Dificultad dinámica: el tablero crece cada 5 niveles
+            let size = 8 + Math.floor(currentLevel / 5);
+            if (size > 15) size = 15; // Límite máximo
+
+            board.innerHTML = "";
+            wordContainer.innerHTML = "";
+            foundWords = [];
+            document.getElementById("nextBtn").style.display = "none";
+            
+            title.innerText = `NIVEL ${currentLevel}`;
+            progreso.innerText = `Jugador: ${currentUser}`;
+            board.style.gridTemplateColumns = `repeat(${size}, 30px)`;
+
+            // Elegir palabras al azar del diccionario
+            wordsInLevel = [];
+            let numWords = 3 + Math.floor(currentLevel / 10);
+            let tempDic = [...diccionario].sort(() => 0.5 - Math.random());
+            wordsInLevel = tempDic.slice(0, numWords);
+
+            let grid = Array(size).fill().map(() => Array(size).fill(''));
+
+            wordsInLevel.forEach(word => {
+                let placed = false;
+                let attempts = 0;
+                while (!placed && attempts < 100) {
+                    let dir = Math.floor(Math.random() * 3); 
+                    let r = Math.floor(Math.random() * size);
+                    let c = Math.floor(Math.random() * size);
+
+                    if (canPlace(grid, word, r, c, dir, size)) {
+                        for (let i = 0; i < word.length; i++) {
+                            let currR = (dir === 1 || dir === 2) ? r + i : r;
+                            let currC = (dir === 0 || dir === 2) ? c + i : c;
+                            grid[currR][currC] = { char: word[i], word: word };
+                        }
+                        placed = true;
+                    }
+                    attempts++;
+                }
+                wordContainer.innerHTML += `<div id="word-${word}" class="word-item active">${word}</div>`;
+            });
+
+            const abc = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const data = grid[r][c];
+                    const div = document.createElement("div");
+                    div.className = "letter";
+                    div.innerText = data ? data.char : abc[Math.floor(Math.random() * abc.length)];
+                    if (data) div.dataset.word = data.word;
+
+                    div.onclick = function() {
+                        if (this.classList.contains('found')) return;
+                        this.classList.toggle('selected');
+                        checkFound();
+                    };
+                    board.appendChild(div);
+                }
+            }
+        }
+
+        function canPlace(grid, word, r, c, dir, size) {
+            for (let i = 0; i < word.length; i++) {
+                let currR = (dir === 1 || dir === 2) ? r + i : r;
+                let currC = (dir === 0 || dir === 2) ? c + i : c;
+                if (currR >= size || currC >= size || (grid[currR][currC] !== '' && grid[currR][currC].char !== word[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function checkFound() {
+            wordsInLevel.forEach(word => {
+                if (foundWords.includes(word)) return;
+                const sel = document.querySelectorAll(`.letter.selected[data-word="${word}"]`);
+                if (sel.length === word.length) {
+                    sel.forEach(c => { c.classList.remove('selected'); c.classList.add('found'); });
+                    document.getElementById(`word-${word}`).classList.remove('active');
+                    foundWords.push(word);
+                }
+            });
+
+            if (foundWords.length === wordsInLevel.length) {
+                saveScore(100); 
+                document.getElementById("nextBtn").style.display = "block";
+            }
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            // Guardar el nivel alcanzado por este usuario
+            userProgress[currentUser] = currentLevel;
+            localStorage.setItem('sopa_progreso_usuarios', JSON.stringify(userProgress));
+            initLevel();
+        }
+
+        function saveScore(p) {
+            let ranking = JSON.parse(localStorage.getItem('sopa_ranking_global')) || [];
+            const idx = ranking.findIndex(r => r.name.toLowerCase() === currentUser.toLowerCase());
+            if (idx !== -1) ranking[idx].points += p;
+            else ranking.push({ name: currentUser, points: p });
+            ranking.sort((a, b) => b.points - a.points);
+            localStorage.setItem('sopa_ranking_global', JSON.stringify(ranking.slice(0, 5)));
+            displayRanking();
+        }
+
+        function displayRanking() {
+            let rk = JSON.parse(localStorage.getItem('sopa_ranking_global')) || [];
+            document.getElementById("rankingList").innerHTML = rk.map((r, i) => `
+                <div class="ranking-item" style="${r.name === currentUser ? 'color:#4ecca3; font-weight:bold' : ''}">
+                    <span>${i + 1}. ${r.name}</span><span>${r.points}</span>
+                </div>`).join('');
+        }
+
+        initLevel(); 
+        displayRanking();
+    </script>
+</body>
+</html>

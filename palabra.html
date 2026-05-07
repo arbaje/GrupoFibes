@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Palabra del Día - Ranking</title>
+    <style>
+        body { background: #1a1a2e; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .main-wrapper { display: flex; gap: 20px; background: #16213e; padding: 20px; border-radius: 15px; }
+        #grid { display: grid; grid-template-rows: repeat(6, 50px); gap: 5px; }
+        .row { display: grid; grid-template-columns: repeat(5, 50px); gap: 5px; }
+        .cell { width: 50px; height: 50px; border: 2px solid #0f3460; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; text-transform: uppercase; background: #1a1a2e; }
+        .correct { background: #4ecca3 !important; }
+        .present { background: #f39c12 !important; }
+        .absent { background: #393e46 !important; }
+        .sidebar { width: 220px; }
+        .ranking-box { background: #0f3460; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
+        .ranking-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #16213e; font-size: 14px; }
+        .btn { width: 100%; padding: 10px; background: #e94560; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: block; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div>
+            <h2 style="text-align:center; color:#4ecca3">PALABRA DEL DÍA</h2>
+            <div id="grid"></div>
+            <input type="text" id="guessInput" maxlength="5" style="width:100%; margin-top:20px; padding:10px; text-align:center; font-size:18px; text-transform:uppercase;">
+            <button class="btn" onclick="checkWord()" style="background:#4ecca3; color:#1a1a2e">ADIVINAR</button>
+        </div>
+        <div class="sidebar">
+            <div class="ranking-box">
+                <h3 style="text-align:center; margin:0">TOP 5 GLOBAL</h3>
+                <div id="rankingList"></div>
+            </div>
+            <a href="index.html" class="btn">SALIR AL MENÚ</a>
+        </div>
+    </div>
+
+    <script>
+        const secret = "MESAS"; // Aquí puedes cambiar la palabra cada día
+        let attempts = 0;
+        const currentUser = localStorage.getItem('currentUser') || 'Invitado';
+
+        function initGrid() {
+            const grid = document.getElementById("grid");
+            for(let i=0; i<6; i++) {
+                let row = document.createElement("div");
+                row.className = "row";
+                for(let j=0; j<5; j++) {
+                    let cell = document.createElement("div");
+                    cell.className = "cell";
+                    row.appendChild(cell);
+                }
+                grid.appendChild(row);
+            }
+        }
+
+        function checkWord() {
+            const input = document.getElementById("guessInput");
+            const guess = input.value.toUpperCase();
+            if(guess.length !== 5) return;
+
+            const row = document.getElementsByClassName("row")[attempts];
+            const cells = row.getElementsByClassName("cell");
+
+            for(let i=0; i<5; i++) {
+                cells[i].innerText = guess[i];
+                if(guess[i] === secret[i]) cells[i].classList.add("correct");
+                else if(secret.includes(guess[i])) cells[i].classList.add("present");
+                else cells[i].classList.add("absent");
+            }
+
+            if(guess === secret) {
+                let points = (6 - attempts) * 100;
+                alert("¡BRUTAL! Ganaste " + points + " puntos");
+                saveScore(points);
+            } else {
+                attempts++;
+                if(attempts === 6) alert("Perdiste. La palabra era " + secret);
+            }
+            input.value = "";
+        }
+
+        function saveScore(p) {
+            let ranking = JSON.parse(localStorage.getItem('palabra_ranking_global')) || [];
+            const idx = ranking.findIndex(r => r.name.toLowerCase() === currentUser.toLowerCase());
+            if(idx !== -1) { if(p > ranking[idx].points) ranking[idx].points = p; }
+            else { ranking.push({name: currentUser, points: p}); }
+            ranking.sort((a,b) => b.points - a.points);
+            localStorage.setItem('palabra_ranking_global', JSON.stringify(ranking.slice(0,5)));
+            displayRanking();
+        }
+
+        function displayRanking() {
+            let ranking = JSON.parse(localStorage.getItem('palabra_ranking_global')) || [];
+            document.getElementById("rankingList").innerHTML = ranking.map((r, i) => `
+                <div class="ranking-item" style="${r.name === currentUser ? 'color:#4ecca3; font-weight:bold' : ''}">
+                    <span>${i+1}. ${r.name}</span>
+                    <span>${r.points}</span>
+                </div>
+            `).join('');
+        }
+
+        initGrid();
+        displayRanking();
+    </script>
+</body>
+</html>

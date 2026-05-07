@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sudoku - Alba & Juan</title>
+    <style>
+        :root { --bg: #1a1a2e; --card: #16213e; --accent: #4ecca3; --danger: #e94560; }
+        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
+        
+        .header { text-align: center; margin-bottom: 10px; }
+        .lives { color: var(--danger); font-size: 1.2rem; margin-bottom: 10px; }
+
+        #sudoku-grid { 
+            display: grid; 
+            grid-template-columns: repeat(9, 1fr); 
+            width: 95vw; 
+            max-width: 400px; 
+            aspect-ratio: 1/1; 
+            background: var(--accent); 
+            border: 2px solid var(--accent);
+            gap: 1px;
+        }
+
+        .cell { background: var(--bg); display: flex; align-items: center; justify-content: center; position: relative; }
+        .cell input { width: 100%; height: 100%; border: none; background: transparent; text-align: center; color: white; font-size: 1.2rem; outline: none; padding: 0; }
+        
+        /* Colores Autocorrección */
+        .correct { color: var(--accent) !important; font-weight: bold; }
+        .error { background: rgba(233, 69, 96, 0.3); color: var(--danger) !important; }
+        .fixed { background: var(--card); color: #888; font-weight: bold; }
+
+        /* Bordes de bloques 3x3 */
+        .cell:nth-child(3n) { border-right: 2px solid var(--accent); }
+        .cell:nth-child(9n) { border-right: none; }
+        #sudoku-grid div:nth-child(n+19):nth-child(-n+27),
+        #sudoku-grid div:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid var(--accent); }
+
+        .btn-exit { margin-top: 20px; padding: 12px 25px; background: var(--danger); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2 id="levelText">SUDOKU NIVEL 1</h2>
+        <div class="lives" id="livesText">❤️❤️❤️</div>
+    </div>
+
+    <div id="sudoku-grid"></div>
+
+    <a href="index.html" class="btn-exit">VOLVER AL MENÚ</a>
+
+    <script>
+        const gridElement = document.getElementById("sudoku-grid");
+        let fallos = 0;
+        const solucion = [
+            [5,3,4,6,7,8,9,1,2], [6,7,2,1,9,5,3,4,8], [1,9,8,3,4,2,5,6,7],
+            [8,5,9,7,6,1,4,2,3], [4,2,6,8,5,3,7,9,1], [7,1,3,9,2,4,8,5,6],
+            [9,6,1,5,3,7,2,8,4], [2,8,7,4,1,9,6,3,5], [3,4,5,2,8,6,1,7,9]
+        ];
+
+        function initGame() {
+            gridElement.innerHTML = "";
+            fallos = 0;
+            document.getElementById("livesText").innerText = "❤️❤️❤️";
+
+            for(let r=0; r<9; r++) {
+                for(let c=0; c<9; c++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell";
+                    
+                    if(Math.random() > 0.6) {
+                        cell.innerText = solucion[r][c];
+                        cell.classList.add("fixed");
+                    } else {
+                        const input = document.createElement("input");
+                        input.type = "tel"; // Abre teclado numérico en móvil
+                        input.maxLength = 1;
+                        input.oninput = function() {
+                            const val = parseInt(this.value);
+                            if(isNaN(val)) return;
+                            if(val === solucion[r][c]) {
+                                this.className = "correct";
+                                this.readOnly = true;
+                            } else {
+                                this.className = "error";
+                                fallos++;
+                                updateLives();
+                            }
+                        };
+                        cell.appendChild(input);
+                    }
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        function updateLives() {
+            const hearts = ["❤️❤️❤️", "❤️❤️", "❤️", "💀"];
+            document.getElementById("livesText").innerText = hearts[fallos] || "💀";
+            if(fallos >= 3) {
+                alert("¡Has perdido las 3 vidas! Reintentando...");
+                initGame();
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
