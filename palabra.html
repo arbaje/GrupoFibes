@@ -2,47 +2,142 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Palabra del Día - Ranking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palabra del Día - Pro</title>
     <style>
-        body { background: #1a1a2e; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .main-wrapper { display: flex; gap: 20px; background: #16213e; padding: 20px; border-radius: 15px; }
-        #grid { display: grid; grid-template-rows: repeat(6, 50px); gap: 5px; }
-        .row { display: grid; grid-template-columns: repeat(5, 50px); gap: 5px; }
-        .cell { width: 50px; height: 50px; border: 2px solid #0f3460; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; text-transform: uppercase; background: #1a1a2e; }
-        .correct { background: #4ecca3 !important; }
-        .present { background: #f39c12 !important; }
-        .absent { background: #393e46 !important; }
-        .sidebar { width: 220px; }
-        .ranking-box { background: #0f3460; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
-        .ranking-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #16213e; font-size: 14px; }
-        .btn { width: 100%; padding: 10px; background: #e94560; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: block; text-align: center; margin-top: 10px; }
+        :root {
+            --bg: #0a0b10;
+            --card: #16213e;
+            --primary: #4ecca3;
+            --secondary: #e94560;
+            --accent: #0f3460;
+            --text: #ffffff;
+        }
+
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-wrapper { 
+            display: flex; 
+            flex-direction: row; 
+            gap: 20px; 
+            background: var(--card); 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 95%;
+        }
+
+        /* Responsive para móviles */
+        @media (max-width: 768px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar { width: 100% !important; }
+            .cell { width: 45px !important; height: 45px !important; font-size: 20px !important; }
+        }
+
+        h2 { text-align: center; color: var(--primary); letter-spacing: 2px; margin-top: 0; }
+
+        #grid { display: grid; grid-template-rows: repeat(6, 1fr); gap: 8px; margin-bottom: 20px; }
+        .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        
+        .cell { 
+            width: 55px; height: 55px; 
+            border: 2px solid var(--accent); 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 26px; font-weight: bold; text-transform: uppercase; 
+            background: rgba(15, 52, 96, 0.3);
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+
+        /* Colores de estado */
+        .correct { background: var(--primary) !important; border-color: var(--primary); color: #1a1a2e; }
+        .present { background: #f39c12 !important; border-color: #f39c12; }
+        .absent { background: #393e46 !important; border-color: #393e46; opacity: 0.6; }
+
+        input { 
+            width: 100%; box-sizing: border-box; padding: 12px; 
+            border-radius: 8px; border: 2px solid var(--accent);
+            background: var(--bg); color: white; text-align: center;
+            font-size: 20px; font-weight: bold; outline: none; margin-bottom: 10px;
+        }
+
+        input:focus { border-color: var(--primary); }
+
+        .btn { 
+            width: 100%; padding: 12px; cursor: pointer; border: none; border-radius: 8px; 
+            font-weight: bold; text-transform: uppercase; transition: 0.3s;
+            text-decoration: none; display: inline-block; text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .btn-check { background: var(--primary); color: #1a1a2e; }
+        .btn-check:hover { background: #3db892; transform: scale(1.02); }
+        .btn-exit { background: var(--secondary); color: white; }
+
+        .sidebar { width: 220px; display: flex; flex-direction: column; }
+        .ranking-box { background: rgba(15, 52, 96, 0.5); padding: 15px; border-radius: 12px; flex-grow: 1; }
+        .ranking-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--accent); }
+
+        /* Overlay de Game Over */
+        #overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); flex-direction: column; justify-content: center;
+            align-items: center; z-index: 100; text-align: center;
+        }
+        #overlay h1 { font-size: 3rem; margin-bottom: 10px; }
+        .msg-win { color: var(--primary); }
+        .msg-lose { color: var(--secondary); }
     </style>
 </head>
 <body>
+
     <div class="main-wrapper">
-        <div>
-            <h2 style="text-align:center; color:#4ecca3">PALABRA DEL DÍA</h2>
+        <div class="game-area">
+            <h2>WORDLE CLONE</h2>
             <div id="grid"></div>
-            <input type="text" id="guessInput" maxlength="5" style="width:100%; margin-top:20px; padding:10px; text-align:center; font-size:18px; text-transform:uppercase;">
-            <button class="btn" onclick="checkWord()" style="background:#4ecca3; color:#1a1a2e">ADIVINAR</button>
+            <input type="text" id="guessInput" maxlength="5" placeholder="Escribe..." autocomplete="off">
+            <button class="btn btn-check" onclick="checkWord()">ADIVINAR</button>
         </div>
+
         <div class="sidebar">
             <div class="ranking-box">
-                <h3 style="text-align:center; margin:0">TOP 5 GLOBAL</h3>
+                <h3 style="text-align:center; margin-top:0">RANKING</h3>
                 <div id="rankingList"></div>
             </div>
-            <a href="index.html" class="btn">SALIR AL MENÚ</a>
+            <div style="margin-top: 15px;">
+                <a href="#" class="btn btn-exit" onclick="location.reload()">REINICIAR</a>
+                <a href="index.html" class="btn" style="background: #555;">MENÚ</a>
+            </div>
         </div>
     </div>
 
+    <div id="overlay">
+        <h1 id="overTitle">GAME OVER</h1>
+        <p id="overMsg" style="font-size: 1.2rem;"></p>
+        <button class="btn btn-check" style="width: 200px;" onclick="resetGame()">VOLVER A JUGAR</button>
+    </div>
+
     <script>
-        const secret = "MESAS"; // Aquí puedes cambiar la palabra cada día
+        const words = ["MESAS", "CASAS", "LIBRO", "PIANO", "GATOS", "PERRO", "LIMON"];
+        let secret = words[Math.floor(Math.random() * words.length)];
         let attempts = 0;
-        const currentUser = localStorage.getItem('currentUser') || 'Invitado';
+        const maxAttempts = 6;
+        const currentUser = localStorage.getItem('currentUser') || 'Player 1';
 
         function initGrid() {
             const grid = document.getElementById("grid");
-            for(let i=0; i<6; i++) {
+            grid.innerHTML = "";
+            for(let i=0; i<maxAttempts; i++) {
                 let row = document.createElement("div");
                 row.className = "row";
                 for(let j=0; j<5; j++) {
@@ -57,34 +152,70 @@
         function checkWord() {
             const input = document.getElementById("guessInput");
             const guess = input.value.toUpperCase();
+            
             if(guess.length !== 5) return;
 
             const row = document.getElementsByClassName("row")[attempts];
             const cells = row.getElementsByClassName("cell");
-
+            
+            let correctCount = 0;
             for(let i=0; i<5; i++) {
                 cells[i].innerText = guess[i];
-                if(guess[i] === secret[i]) cells[i].classList.add("correct");
-                else if(secret.includes(guess[i])) cells[i].classList.add("present");
-                else cells[i].classList.add("absent");
+                if(guess[i] === secret[i]) {
+                    cells[i].classList.add("correct");
+                    correctCount++;
+                } else if(secret.includes(guess[i])) {
+                    cells[i].classList.add("present");
+                } else {
+                    cells[i].classList.add("absent");
+                }
             }
 
             if(guess === secret) {
-                let points = (6 - attempts) * 100;
-                alert("¡BRUTAL! Ganaste " + points + " puntos");
-                saveScore(points);
+                endGame(true);
             } else {
                 attempts++;
-                if(attempts === 6) alert("Perdiste. La palabra era " + secret);
+                if(attempts === maxAttempts) {
+                    endGame(false);
+                }
             }
             input.value = "";
         }
 
+        function endGame(win) {
+            const overlay = document.getElementById("overlay");
+            const title = document.getElementById("overTitle");
+            const msg = document.getElementById("overMsg");
+            
+            overlay.style.display = "flex";
+            if(win) {
+                title.innerText = "¡VICTORIA!";
+                title.className = "msg-win";
+                let points = (maxAttempts - attempts) * 100;
+                msg.innerText = `Has adivinado la palabra. +${points} pts`;
+                saveScore(points);
+            } else {
+                title.innerText = "GAME OVER";
+                title.className = "msg-lose";
+                msg.innerText = `La palabra era: ${secret}`;
+            }
+        }
+
+        function resetGame() {
+            attempts = 0;
+            secret = words[Math.floor(Math.random() * words.length)];
+            document.getElementById("overlay").style.display = "none";
+            initGrid();
+        }
+
         function saveScore(p) {
             let ranking = JSON.parse(localStorage.getItem('palabra_ranking_global')) || [];
-            const idx = ranking.findIndex(r => r.name.toLowerCase() === currentUser.toLowerCase());
-            if(idx !== -1) { if(p > ranking[idx].points) ranking[idx].points = p; }
-            else { ranking.push({name: currentUser, points: p}); }
+            const idx = ranking.findIndex(r => r.name === currentUser);
+            if(idx !== -1) {
+                if(p > ranking[idx].points) ranking[idx].points += p; 
+            } else {
+                ranking.push({name: currentUser, points: p});
+            }
             ranking.sort((a,b) => b.points - a.points);
             localStorage.setItem('palabra_ranking_global', JSON.stringify(ranking.slice(0,5)));
             displayRanking();
@@ -93,7 +224,7 @@
         function displayRanking() {
             let ranking = JSON.parse(localStorage.getItem('palabra_ranking_global')) || [];
             document.getElementById("rankingList").innerHTML = ranking.map((r, i) => `
-                <div class="ranking-item" style="${r.name === currentUser ? 'color:#4ecca3; font-weight:bold' : ''}">
+                <div class="ranking-item" style="${r.name === currentUser ? 'color:var(--primary); font-weight:bold' : ''}">
                     <span>${i+1}. ${r.name}</span>
                     <span>${r.points}</span>
                 </div>
