@@ -5,8 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sudoku - Alba & Juan</title>
     <style>
-        :root { --bg: #1a1a2e; --card: #16213e; --accent: #4ecca3; --danger: #e94560; }
-        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
+        :root { 
+            --bg: #1a1a2e; 
+            --card: #16213e; 
+            --accent: #4ecca3; 
+            --danger: #e94560; 
+        }
+
+        body { 
+            background: var(--bg); 
+            color: white; 
+            font-family: sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 10px; 
+        }
         
         .header { text-align: center; margin-bottom: 10px; }
         .lives { color: var(--danger); font-size: 1.2rem; margin-bottom: 10px; }
@@ -23,7 +39,17 @@
         }
 
         .cell { background: var(--bg); display: flex; align-items: center; justify-content: center; position: relative; }
-        .cell input { width: 100%; height: 100%; border: none; background: transparent; text-align: center; color: white; font-size: 1.2rem; outline: none; padding: 0; }
+        .cell input { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+            background: transparent; 
+            text-align: center; 
+            color: white; 
+            font-size: 1.2rem; 
+            outline: none; 
+            padding: 0; 
+        }
         
         /* Colores Autocorrección */
         .correct { color: var(--accent) !important; font-weight: bold; }
@@ -36,7 +62,48 @@
         #sudoku-grid div:nth-child(n+19):nth-child(-n+27),
         #sudoku-grid div:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid var(--accent); }
 
-        .btn-exit { margin-top: 20px; padding: 12px 25px; background: var(--danger); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; }
+        .btn-exit { 
+            margin-top: 20px; 
+            padding: 12px 25px; 
+            background: var(--danger); 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            font-weight: bold; 
+        }
+
+        /* Pantalla de Game Over */
+        #game-over-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        #game-over-screen h1 { 
+            color: var(--danger); 
+            font-size: 3rem; 
+            margin-bottom: 20px; 
+            text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+        }
+
+        .btn-restart {
+            padding: 15px 40px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+        }
+
+        .btn-restart:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -50,8 +117,16 @@
 
     <a href="index.html" class="btn-exit">VOLVER AL MENÚ</a>
 
+    <div id="game-over-screen">
+        <h1>¡GAME OVER!</h1>
+        <button class="btn-restart" onclick="restartGame()">REINTENTAR</button>
+    </div>
+
     <script>
         const gridElement = document.getElementById("sudoku-grid");
+        const livesText = document.getElementById("livesText");
+        const gameOverScreen = document.getElementById("game-over-screen");
+        
         let fallos = 0;
         const solucion = [
             [5,3,4,6,7,8,9,1,2], [6,7,2,1,9,5,3,4,8], [1,9,8,3,4,2,5,6,7],
@@ -62,23 +137,29 @@
         function initGame() {
             gridElement.innerHTML = "";
             fallos = 0;
-            document.getElementById("livesText").innerText = "❤️❤️❤️";
+            livesText.innerText = "❤️❤️❤️";
+            gameOverScreen.style.display = "none";
 
             for(let r=0; r<9; r++) {
                 for(let c=0; c<9; c++) {
                     const cell = document.createElement("div");
                     cell.className = "cell";
                     
+                    // Probabilidad de celdas fijas (0.6 = fácil, mayor número = más difícil)
                     if(Math.random() > 0.6) {
                         cell.innerText = solucion[r][c];
                         cell.classList.add("fixed");
                     } else {
                         const input = document.createElement("input");
-                        input.type = "tel"; // Abre teclado numérico en móvil
+                        input.type = "tel"; 
                         input.maxLength = 1;
                         input.oninput = function() {
                             const val = parseInt(this.value);
-                            if(isNaN(val)) return;
+                            if(isNaN(val)) {
+                                this.value = "";
+                                return;
+                            }
+                            
                             if(val === solucion[r][c]) {
                                 this.className = "correct";
                                 this.readOnly = true;
@@ -97,13 +178,18 @@
 
         function updateLives() {
             const hearts = ["❤️❤️❤️", "❤️❤️", "❤️", "💀"];
-            document.getElementById("livesText").innerText = hearts[fallos] || "💀";
+            livesText.innerText = hearts[fallos] || "💀";
+            
             if(fallos >= 3) {
-                alert("¡Has perdido las 3 vidas! Reintentando...");
-                initGame();
+                gameOverScreen.style.display = "flex";
             }
         }
 
+        function restartGame() {
+            initGame();
+        }
+
+        // Iniciar al cargar la página
         initGame();
     </script>
 </body>
