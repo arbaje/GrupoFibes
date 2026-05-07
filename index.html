@@ -35,7 +35,6 @@
 
         h1, h2 { color: var(--accent); margin-bottom: 20px; }
 
-        /* Estilos de botones de juego */
         .game-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -59,7 +58,16 @@
             font-size: 0.8rem;
         }
 
+        /* Estilo para los iconos de Font Awesome */
         .btn-game i { font-size: 2rem; color: var(--accent); }
+
+        /* Estilo especial para el Emoji de la Serpiente */
+        .snake-emoji {
+            font-size: 2.2rem; /* Tamaño similar a los otros iconos */
+            line-height: 1;
+            filter: drop-shadow(0 0 5px var(--accent)); /* Brillo verde para que encaje */
+        }
+
         .btn-game:active { transform: scale(0.95); background: #1f4068; }
 
         .full-width { grid-column: span 2; }
@@ -94,18 +102,24 @@
     <div id="menuScreen" class="container">
         <h2 id="welcomeText">¡Hola!</h2>
         <div class="game-grid">
+            
             <button class="btn-game" onclick="app.loadGame('Serpiente')">
-                <i class="fas fa-staff-snake"></i>SERPIENTE
+                <span class="snake-emoji">🐍</span>
+                SERPIENTE
             </button>
+
             <button class="btn-game" onclick="app.loadGame('Palabra')">
                 <i class="fas fa-font"></i>PALABRA DÍA
             </button>
+            
             <button class="btn-game" onclick="app.loadGame('Sopa')">
                 <i class="fas fa-search"></i>SOPA LETRAS
             </button>
+            
             <button class="btn-game" onclick="app.loadGame('Sudoku')">
                 <i class="fas fa-table-cells"></i>SUDOKU
             </button>
+            
             <button class="btn-game full-width" onclick="app.loadGame('Buscamina')">
                 <i class="fas fa-bomb"></i>BUSCAMINA
             </button>
