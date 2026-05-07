@@ -2,214 +2,229 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Busca-Bombas Pro - Niveles</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Buscaminas Pro - Alba & Juan</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #1a1a2e; --card: #16213e; --accent: #4ecca3; --danger: #e94560; --mine: #f39c12; }
-        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .main-wrapper { display: flex; gap: 20px; background: var(--card); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        :root { --bg: #1a1a2e; --card: #16213e; --accent: #4ecca3; --danger: #e94560; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; min-height: 100vh; }
         
-        #mines-grid { 
+        #status-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(26, 26, 46, 0.95); z-index: 1000;
+            flex-direction: column; justify-content: center; align-items: center; text-align: center;
+        }
+        .modal-box { background: var(--card); padding: 30px; border-radius: 20px; border: 3px solid var(--accent); width: 80%; max-width: 300px; }
+        
+        /* Controles de Nivel */
+        .difficulty-selector { margin-bottom: 10px; display: flex; gap: 5px; }
+        .btn-diff { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; background: #333; color: white; font-size: 0.8rem; }
+        .diff-active { background: #f39c12 !important; }
+
+        #grid { 
             display: grid; 
             gap: 2px; 
             background: #0f3460; 
             padding: 5px; 
-            border-radius: 5px;
+            border-radius: 8px; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .cell { 
+            width: 35px; height: 35px; 
+            background: #2a2a40; 
+            border-radius: 3px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; font-size: 1rem; cursor: pointer;
             user-select: none;
         }
-        .cell {
-            width: 30px; height: 30px; background: var(--bg);
-            display: flex; justify-content: center; align-items: center;
-            font-weight: bold; font-size: 0.9rem; cursor: pointer;
-            border-radius: 2px;
-        }
-        .cell.hidden { background: #232345; color: transparent; }
-        .cell.hidden:hover { background: #2d2d5a; }
-        .cell.revealed { background: #16213e; color: #4ecca3; cursor: default; }
-        .cell.mine { background: var(--danger) !important; color: white !important; }
-        .cell.flag { background: var(--mine) !important; }
 
-        /* Colores para los números */
-        .n1 { color: #3498db; } .n2 { color: #2ecc71; } .n3 { color: #e74c3c; } .n4 { color: #9b59b6; }
-
-        .sidebar { width: 220px; display: flex; flex-direction: column; }
-        .info-box { background: #0f3460; padding: 15px; border-radius: 10px; margin-bottom: 10px; text-align: center; }
-        .ranking-box { background: #0f3460; padding: 10px; border-radius: 10px; flex-grow: 1; font-size: 0.9rem; }
-        .ranking-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #16213e; }
+        .revealed { background: #e0e0e0; color: #1a1a2e; }
+        .mine { background: var(--danger) !important; color: white !important; }
         
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; text-decoration: none; display: block; text-align: center; }
-        .btn-next { background: var(--accent); color: var(--bg); }
-        .btn-exit { background: var(--danger); color: white; }
+        /* Colores para los números */
+        .n-1 { color: blue; } .n-2 { color: green; } .n-3 { color: red; } .n-4 { color: darkblue; }
+
+        .mode-selector { margin: 15px; display: flex; gap: 10px; width: 100%; max-width: 350px; }
+        .btn-mode { flex: 1; padding: 15px; border-radius: 10px; border: none; font-weight: bold; background: #555; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .active-mode { background: var(--accent); color: var(--bg); border: 2px solid white; }
+        .btn-menu { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="main-wrapper">
-        <div>
-            <h2 id="levelTitle" style="margin:0 0 10px 0; color: var(--accent); text-align:center;">BUSCAMINA NIVEL 1</h2>
-            <div id="mines-grid"></div>
-        </div>
-
-        <div class="sidebar">
-            <div class="info-box">
-                <div id="mineCount" style="font-size: 1.2rem; font-weight: bold; color: var(--mine);">💣 0</div>
-                <div id="progresoText" style="font-size: 0.8rem; color: #4ecca3; margin-top:5px;"></div>
-                <p style="font-size: 0.7rem; color: #888; margin-top:5px;">Click derecho para poner bandera</p>
-            </div>
-
-            <div class="ranking-box">
-                <h3 style="text-align:center; margin:0 0 5px 0;">TOP 5 RANKING</h3>
-                <div id="rankingList"></div>
-            </div>
-
-            <button id="nextBtn" class="btn btn-next" style="display:none;" onclick="siguienteNivel()">¡NIVEL COMPLETADO!</button>
-            <a href="index.html" class="btn btn-exit">VOLVER AL MENÚ</a>
+    <div id="status-overlay">
+        <div class="modal-box" id="modal-box">
+            <i id="status-icon" class="fas fa-skull" style="font-size: 3rem; margin-bottom: 15px;"></i>
+            <h2 id="status-title">GAME OVER</h2>
+            <button class="btn-menu" style="background: var(--accent);" onclick="initGame()">REINTENTAR</button>
+            <button class="btn-menu" style="background: var(--danger); color: white;" onclick="window.location.href='index.html'">SALIR</button>
         </div>
     </div>
 
+    <h2>💣 BUSCAMINAS</h2>
+
+    <div class="difficulty-selector">
+        <button class="btn-diff diff-active" onclick="changeDiff(8, 8, 10, this)">BAJO</button>
+        <button class="btn-diff" onclick="changeDiff(12, 12, 25, this)">MEDIO</button>
+        <button class="btn-diff" onclick="changeDiff(15, 15, 45, this)">ALTO</button>
+    </div>
+
+    <div class="mode-selector">
+        <button id="btnPicar" class="btn-mode active-mode" onclick="setMode('picar')"><i class="fas fa-hammer"></i> PICAR</button>
+        <button id="btnBandera" class="btn-mode" onclick="setMode('bandera')"><i class="fas fa-flag"></i> BANDERA</button>
+    </div>
+
+    <div id="grid"></div>
+
     <script>
-        const currentUser = localStorage.getItem('currentUser') || 'Invitado';
-        let userProgress = JSON.parse(localStorage.getItem('mines_progreso_usuarios')) || {};
-        let nivelActual = userProgress[currentUser] || 1;
-        
-        let rows, cols, mines, boardData, gameOver;
+        let mode = 'picar';
+        let config = { rows: 8, cols: 8, mines: 10 };
+        let board = [];
+        let cells = [];
+        let gameOver = false;
+        let revealedCount = 0;
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById('btnPicar').classList.toggle('active-mode', m==='picar');
+            document.getElementById('btnBandera').classList.toggle('active-mode', m==='bandera');
+        }
+
+        function changeDiff(r, c, m, btn) {
+            config = { rows: r, cols: c, mines: m };
+            document.querySelectorAll('.btn-diff').forEach(b => b.classList.remove('diff-active'));
+            btn.classList.add('diff-active');
+            initGame();
+        }
 
         function initGame() {
             gameOver = false;
-            document.getElementById("nextBtn").style.display = "none";
-            document.getElementById("levelTitle").innerText = `BUSCAMINA NIVEL ${nivelActual}`;
-            document.getElementById("progresoText").innerText = `Jugador: ${currentUser}`;
+            revealedCount = 0;
+            document.getElementById('status-overlay').style.display = 'none';
+            const gridElement = document.getElementById('grid');
+            gridElement.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
+            gridElement.innerHTML = '';
+            board = Array(config.rows).fill().map(() => Array(config.cols).fill(0));
+            cells = [];
 
-            // Configuración según nivel
-            rows = 8 + Math.floor(nivelActual / 3);
-            cols = rows;
-            mines = Math.floor((rows * cols) * 0.15) + (nivelActual); 
-            document.getElementById("mineCount").innerText = `💣 ${mines}`;
-
-            const grid = document.getElementById("mines-grid");
-            grid.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
-            grid.innerHTML = "";
-
-            // Crear matriz de datos
-            boardData = Array(rows).fill().map(() => Array(cols).fill(0));
-            
-            // Colocar minas
+            // 1. Colocar minas
             let placedMines = 0;
-            while(placedMines < mines) {
-                let r = Math.floor(Math.random() * rows);
-                let c = Math.floor(Math.random() * cols);
-                if(boardData[r][c] !== 'M') {
-                    boardData[r][c] = 'M';
+            while(placedMines < config.mines) {
+                let r = Math.floor(Math.random() * config.rows);
+                let c = Math.floor(Math.random() * config.cols);
+                if(board[r][c] !== 'M') {
+                    board[r][c] = 'M';
                     placedMines++;
                 }
             }
 
-            // Calcular números
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    if(boardData[r][c] === 'M') continue;
+            // 2. Calcular números
+            for(let r=0; r<config.rows; r++) {
+                for(let c=0; c<config.cols; c++) {
+                    if(board[r][c] === 'M') continue;
                     let count = 0;
                     for(let i=-1; i<=1; i++) {
                         for(let j=-1; j<=1; j++) {
-                            if(r+i>=0 && r+i<rows && c+j>=0 && c+j<cols && boardData[r+i][c+j] === 'M') count++;
+                            if(board[r+i]?.[c+j] === 'M') count++;
                         }
                     }
-                    boardData[r][c] = count;
+                    board[r][c] = count;
                 }
             }
 
-            // Dibujar tablero
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    const cell = document.createElement("div");
-                    cell.className = "cell hidden";
-                    cell.dataset.r = r;
-                    cell.dataset.c = c;
-                    
-                    cell.onclick = () => revealCell(r, c);
-                    cell.oncontextmenu = (e) => {
-                        e.preventDefault();
-                        if(!cell.classList.contains('revealed')) cell.classList.toggle('flag');
-                    };
-                    
-                    grid.appendChild(cell);
+            // 3. Crear celdas visuales
+            for(let r=0; r<config.rows; r++) {
+                cells[r] = [];
+                for(let c=0; c<config.cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.onclick = () => handleCellClick(r, c);
+                    gridElement.appendChild(cell);
+                    cells[r][c] = cell;
                 }
+            }
+        }
+
+        function handleCellClick(r, c) {
+            if(gameOver) return;
+            const cell = cells[r][c];
+
+            if(mode === 'bandera') {
+                if(cell.classList.contains('revealed')) return;
+                cell.innerText = cell.innerText === '🚩' ? '' : '🚩';
+                return;
+            }
+
+            if(cell.innerText === '🚩' || cell.classList.contains('revealed')) return;
+
+            if(board[r][c] === 'M') {
+                revealAllMines();
+                showEnd(false);
+            } else {
+                revealCell(r, c);
+                checkWin();
             }
         }
 
         function revealCell(r, c) {
-            if(gameOver) return;
-            const cell = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
-            if(!cell || cell.classList.contains('revealed') || cell.classList.contains('flag')) return;
+            if(r<0 || r>=config.rows || c<0 || c>=config.cols) return;
+            if(cells[r][c].classList.contains('revealed')) return;
 
-            cell.classList.remove('hidden');
-            cell.classList.add('revealed');
+            const val = board[r][c];
+            cells[r][c].classList.add('revealed');
+            revealedCount++;
 
-            if(boardData[r][c] === 'M') {
-                cell.classList.add('mine');
-                cell.innerText = "💣";
-                gameOver = true;
-                setTimeout(() => { alert("💥 ¡BOOM! Has pisado una mina. Reintentando nivel..."); initGame(); }, 500);
-                return;
-            }
-
-            if(boardData[r][c] > 0) {
-                cell.innerText = boardData[r][c];
-                cell.classList.add('n' + boardData[r][c]);
+            if(val > 0) {
+                cells[r][c].innerText = val;
+                cells[r][c].classList.add('n-' + val);
             } else {
-                // Expandir si es 0
+                // Si es cero, revelación en cascada (lo típico del buscaminas)
                 for(let i=-1; i<=1; i++) {
                     for(let j=-1; j<=1; j++) {
-                        if(r+i>=0 && r+i<rows && c+j>=0 && c+j<cols) revealCell(r+i, c+j);
+                        revealCell(r+i, c+j);
                     }
                 }
             }
-            checkWin();
+        }
+
+        function revealAllMines() {
+            gameOver = true;
+            for(let r=0; r<config.rows; r++) {
+                for(let c=0; c<config.cols; c++) {
+                    if(board[r][c] === 'M') {
+                        cells[r][c].classList.add('mine');
+                        cells[r][c].innerHTML = '<i class="fas fa-bomb"></i>';
+                    }
+                }
+            }
         }
 
         function checkWin() {
-            const hiddenNonMines = document.querySelectorAll('.cell.hidden:not(.mine-cell)');
-            let win = true;
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    const cell = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
-                    if(boardData[r][c] !== 'M' && cell.classList.contains('hidden')) win = false;
-                }
+            if(revealedCount === (config.rows * config.cols) - config.mines) {
+                showEnd(true);
             }
+        }
+
+        function showEnd(win) {
+            gameOver = true;
+            const overlay = document.getElementById('status-overlay');
+            const title = document.getElementById('status-title');
+            const icon = document.getElementById('status-icon');
+            overlay.style.display = 'flex';
+            
             if(win) {
-                saveScore(150 * nivelActual);
-                document.getElementById("nextBtn").style.display = "block";
-                gameOver = true;
+                title.innerText = "¡LIMPIEZA TOTAL!";
+                icon.className = "fas fa-trophy";
+                icon.style.color = "var(--accent)";
+            } else {
+                title.innerText = "BOOOOM!";
+                icon.className = "fas fa-bomb";
+                icon.style.color = "var(--danger)";
             }
-        }
-
-        function siguienteNivel() {
-            nivelActual++;
-            userProgress[currentUser] = nivelActual;
-            localStorage.setItem('mines_progreso_usuarios', JSON.stringify(userProgress));
-            initGame();
-        }
-
-        function saveScore(p) {
-            let ranking = JSON.parse(localStorage.getItem('mines_ranking_global')) || [];
-            const idx = ranking.findIndex(r => r.name.toLowerCase() === currentUser.toLowerCase());
-            if (idx !== -1) ranking[idx].points += p;
-            else ranking.push({ name: currentUser, points: p });
-            ranking.sort((a, b) => b.points - a.points);
-            localStorage.setItem('mines_ranking_global', JSON.stringify(ranking.slice(0, 5)));
-            displayRanking();
-        }
-
-        function displayRanking() {
-            let rk = JSON.parse(localStorage.getItem('mines_ranking_global')) || [];
-            document.getElementById("rankingList").innerHTML = rk.map((r, i) => `
-                <div class="ranking-item" style="${r.name === currentUser ? 'color:#4ecca3; font-weight:bold' : ''}">
-                    <span>${i + 1}. ${r.name}</span><span>${r.points}</span>
-                </div>`).join('');
         }
 
         initGame();
-        displayRanking();
     </script>
 </body>
 </html>
